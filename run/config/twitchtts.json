@@ -1,0 +1,14 @@
+{
+  "twitchChannel": "yungdv",
+  "twitchOAuthToken": "oauth:not_needed_anonymous_read",
+  "maxPets": 5,
+  "petLifespanMs": 600000,
+  "messageIntervalMs": 1000,
+  "voiceRotation": [
+    "aidar",
+    "baya",
+    "kseniya",
+    "xenia",
+    "eugene"
+  ]
+}

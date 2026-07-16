@@ -1,0 +1,34 @@
+/spawnchicken
+/gamemode survival
+/help twithchtts
+/help
+/test
+/jfr
+/spawnchicken
+/twitchtest Привет это тест
+/spawnchicken
+/spawnchicken yungdv
+/twitchtest Привет это тест
+/twitchtest
+/
+/gamemode survival
+/tts status
+/fun true
+/chickens
+/help
+/twitchtest йоу
+/chickens
+/fun true
+/fun false
+/twitchtest ал
+/twitchtest ахахахх
+/
+//twitchtest ахахахх
+/
+/twitchtest ахахахх
+/
+/twitchtest ахахахх
+/
+/twitchtest ахахахх
+/twitchtest пидор
+/twitchtest твоя мама шлюха

@@ -1,0 +1,17 @@
+# Build outputs
+build/
+.gradle/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+settings.gradle
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Sensitive files
+*.key
+*.env

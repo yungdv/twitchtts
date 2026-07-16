@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "twitchtts",
+  "version": "${version}",
+  "name": "TwitchTts",
+  "description": "Twitch TTS Mod",
+  "authors": ["You"],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/twitchtts/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.twitchtts.TwitchTts"
+    ],
+    "client": [
+      "com.twitchtts.client.TwitchTtsClient"
+    ],
+    "modmenu": [
+      "com.twitchtts.config.ModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "twitchtts.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "~1.21",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

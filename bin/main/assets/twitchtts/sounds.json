@@ -1,0 +1,10 @@
+   {
+     "tts_voice": {
+       "sounds": [
+         {
+           "name": "twitchtts:tts_voice",
+           "stream": true
+         }
+       ]
+     }
+   }
