@@ -1,5 +1,9 @@
 {
   "item.twitchtts.twitch_berry": "Ягода Твича",
   "item.twitchtts.streamer_coin": "Монета Стримера",
-  "item.twitchtts.streamer_crown": "Корона Стримера"
+  "item.twitchtts.streamer_crown": "Корона Стримера",
+  "advancements.twitchtts.root.title": "TTS Курицы",
+  "advancements.twitchtts.root.desc": "Установите мод и призовите свою первую курицу",
+  "advancements.twitchtts.first_blood.title": "Первая кровь",
+  "advancements.twitchtts.first_blood.desc": "Ваша курица победила враждебного моба"
 }

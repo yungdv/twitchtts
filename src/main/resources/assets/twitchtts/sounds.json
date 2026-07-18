@@ -6,5 +6,21 @@
            "stream": true
          }
        ]
-     }
-   }
+     },
+   "level_up": {
+    "sounds": [
+      {
+        "name": "twitchtts:level_up",
+        "stream": false
+      }
+    ]
+  },
+  "coin_drop": {
+    "sounds": [
+      {
+        "name": "twitchtts:coin_drop",
+        "stream": false
+      }
+    ]
+  }
+}

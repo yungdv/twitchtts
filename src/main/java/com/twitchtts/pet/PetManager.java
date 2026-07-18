@@ -42,14 +42,30 @@ public class PetManager {
             Entity entity = world.getEntity(petUuid);
             if (entity instanceof ChickenEntity chicken) {
                 int msgCount = MESSAGE_COUNTS.getOrDefault(playerName, 0);
-                int newLevel = msgCount;
+                int newLevel = msgCount; // Уровень равен количеству сообщений
                 int currentLevel = PLAYER_LEVELS.getOrDefault(playerName, 1);
                 
                 if (newLevel > currentLevel) {
                     PLAYER_LEVELS.put(playerName, newLevel);
+                    
+                    // 1. Тихо обновляем имя (без спама)
                     updateChickenName(chicken, playerName, newLevel);
-                    world.spawnParticles(ParticleTypes.HAPPY_VILLAGER, chicken.getX(), chicken.getY() + 1.5, chicken.getZ(), 15, 0.5, 0.5, 0.5, 0.1);
-                    owner.sendMessage(Text.literal("🎉 Твоя курица достигла уровня " + newLevel + "!").formatted(Formatting.GOLD), true);
+                    
+                    // 2. ЭВОЛЮЦИЯ: Звук и частицы ТОЛЬКО на 5, 10, 15, 20...
+                    if (newLevel % 5 == 0) {
+                        // Проигрываем кастомный звук level_up.ogg
+                        world.playSound(null, chicken.getX(), chicken.getY(), chicken.getZ(), 
+                            net.minecraft.sound.SoundEvent.of(net.minecraft.util.Identifier.of("twitchtts", "level_up")), 
+                            net.minecraft.sound.SoundCategory.PLAYERS, 1.0F, 1.0F);
+                        
+                        // Эпичные частицы тотема
+                        world.spawnParticles(ParticleTypes.TOTEM_OF_UNDYING, chicken.getX(), chicken.getY() + 1.0, chicken.getZ(), 30, 0.5, 0.5, 0.5, 0.1);
+                        
+                        // Сообщение в чат (только при эволюции)
+                        owner.sendMessage(Text.literal("✨ ").append(Text.literal(playerName).formatted(Formatting.GREEN))
+                            .append(Text.literal(" достиг уровня " + newLevel + "!").formatted(Formatting.GOLD)), true);
+                    }
+                    
                     checkAchievements(owner, playerName, newLevel);
                 }
                 return chicken;
@@ -145,9 +161,8 @@ public class PetManager {
 
             // Обновление имени и таймера
             if (TICK_COUNTER % 20 == 0) {
-                long secondsLeft = remaining / 1000;
-                String timeStr = String.format("[%d:%02d]", secondsLeft / 60, secondsLeft % 60);
-                updateChickenNameWithTime(chicken, entry.getKey(), level, timeStr);
+                // Просто обновляем имя и уровень, без таймера
+                updateChickenName(chicken, entry.getKey(), level);
                 chicken.setCustomNameVisible(true);
             }
 
@@ -256,53 +271,47 @@ public class PetManager {
                 }
             }
             
-            // Подарки раз в 2 минуты
+                        // Подарки раз в 2 минуты
             long lastGift = LAST_GIFT_TIMES.getOrDefault(chicken.getUuid(), 0L);
             if (now - lastGift > 120000) {
                 giveUsefulGift(chicken, owner, entry.getKey());
                 LAST_GIFT_TIMES.put(chicken.getUuid(), now);
             }
-        }
+        } // <--- ЭТА СКОБКА ЗАКРЫВАЕТ ЦИКЛ for (Map.Entry<String, UUID> entry : PETS.entrySet())
         
-         // УЛУЧШЕННЫЙ ACTIONBAR С ЦВЕТАМИ И РАЗДЕЛЕНИЕМ
+        // ==========================================
+        // УЛУЧШЕННЫЙ, КОМПАКТНЫЙ ACTION BAR
+        // ==========================================
         if (TICK_COUNTER % 20 == 0) {
             String chaosStatus = TwitchTts.CHAOS_MODE ? "🔥 ХАОС" : "🕊️ Мир";
             
-            // Явно указываем MutableText, чтобы работал метод .append()
-            net.minecraft.text.MutableText actionBar = Text.literal("🐔 Стадо: " + activePets + "/" + TwitchTts.CONFIG.maxPets + " | " + chaosStatus + " | ")
+            net.minecraft.text.MutableText actionBar = Text.literal("🐔 Стадо: " + activePets + "/" + TwitchTts.CONFIG.maxPets + " | " + chaosStatus)
                 .formatted(Formatting.GOLD, Formatting.BOLD);
 
             int count = 0;
             for (Map.Entry<String, UUID> entry : PETS.entrySet()) {
-                long spawnTime = SPAWN_TIMES.getOrDefault(entry.getValue(), 0L);
-                long remaining = TwitchTts.CONFIG.petLifespanMs - (now - spawnTime);
-                long secondsLeft = remaining / 1000;
-                long mins = secondsLeft / 60;
-                long secs = secondsLeft % 60;
                 int level = PLAYER_LEVELS.getOrDefault(entry.getKey(), 1);
-
-                Formatting nameColor = Formatting.WHITE;
-                if (level >= 20) nameColor = Formatting.GOLD;
-                else if (level >= 10) nameColor = Formatting.AQUA;
-                else if (level >= 5) nameColor = Formatting.GREEN;
-
-                if (count > 0) {
-                    actionBar.append(Text.literal(" | ").formatted(Formatting.DARK_GRAY));
-                }
-
-                actionBar.append(Text.literal(entry.getKey() + "[L" + level + "]").formatted(nameColor));
-                actionBar.append(Text.literal("[" + mins + ":" + String.format("%02d", secs) + "]").formatted(Formatting.GRAY));
                 
+                Formatting nameColor = Formatting.WHITE;
+                String prefix = "🐔 ";
+                if (level >= 20) { nameColor = Formatting.GOLD; prefix = "👑 "; }
+                else if (level >= 10) { nameColor = Formatting.AQUA; prefix = "⭐ "; }
+                else if (level >= 5) { nameColor = Formatting.GREEN; prefix = "✨ "; }
+
+                actionBar.append(Text.literal(" | ").formatted(Formatting.DARK_GRAY));
+                actionBar.append(Text.literal(prefix + entry.getKey() + "[L" + level + "]").formatted(nameColor));
                 count++;
             }
 
             if (count == 0) {
-                actionBar.append(Text.literal("Пусто").formatted(Formatting.GRAY, Formatting.ITALIC));
+                actionBar.append(Text.literal(" | Пусто (Напиши /twitchtest)").formatted(Formatting.GRAY, Formatting.ITALIC));
+            } else if (count >= 3) {
+                actionBar.append(Text.literal(" | (Подробнее: /chickens)").formatted(Formatting.GRAY, Formatting.ITALIC));
             }
 
             owner.sendMessage(actionBar, true);
         }
-    }
+    } // <--- ЭТА СКОБКА ЗАКРЫВАЕТ МЕТОД tickPets!
 
     private static void checkAchievements(ServerPlayerEntity player, String playerName, int level) {
         int achievements = ACHIEVEMENTS.getOrDefault(playerName, 0);
@@ -328,27 +337,35 @@ public class PetManager {
         }
     }
 
-    private static void updateChickenNameWithTime(ChickenEntity chicken, String playerName, int level, String timeStr) {
+    // ЕДИНСТВЕННЫЙ метод для обновления имени. Только префикс, имя и уровень.
+    public static void updateChickenName(ChickenEntity chicken, String playerName, int level) {
         Formatting color;
-        String prefix = " ";
-        if (level >= 20) { color = Formatting.GOLD; prefix = "👑 "; } 
-        else if (level >= 10) { color = Formatting.AQUA; prefix = "⭐ "; } 
-        else if (level >= 5) { color = Formatting.GREEN; prefix = "✨ "; } 
-        else { color = Formatting.WHITE; }
+        String prefix = "";
         
-        chicken.setCustomName(Text.literal(prefix + playerName + " [L" + level + "] " + timeStr).styled(style -> style.withColor(color).withBold(true)));
+        if (level >= 20) { 
+            color = Formatting.GOLD; 
+            prefix = "👑 "; 
+        } else if (level >= 10) { 
+            color = Formatting.AQUA; 
+            prefix = "⭐ "; 
+        } else if (level >= 5) { 
+            color = Formatting.GREEN; 
+            prefix = "✨ "; 
+        } else { 
+            color = Formatting.WHITE; 
+            prefix = "🐔 ";
+        }
+        
+        chicken.setCustomName(Text.literal(prefix + playerName + " [Lvl " + level + "]")
+            .styled(style -> style.withColor(color).withBold(true)));
         chicken.setCustomNameVisible(true);
-    }
-
-    private static void updateChickenName(ChickenEntity chicken, String playerName, int level) {
-        updateChickenNameWithTime(chicken, playerName, level, "[--:--]");
     }
 
     private static void dropLegacy(ChickenEntity chicken, ServerPlayerEntity owner, String playerName) {
         ServerWorld world = (ServerWorld) chicken.getWorld();
         
         if (Math.random() < 0.3) {
-            net.minecraft.entity.mob.ZombieEntity zombie = EntityType.ZOMBIE.create(world);
+            net.minecraft.entity.mob.ZombieEntity zombie = net.minecraft.entity.EntityType.ZOMBIE.create(world);
             if (zombie != null) {
                 zombie.setBaby(true);
                 zombie.refreshPositionAndAngles(chicken.getX(), chicken.getY(), chicken.getZ(), 0, 0);
@@ -365,90 +382,58 @@ public class PetManager {
         owner.sendMessage(Text.literal("💀 ").append(Text.literal(playerName).formatted(Formatting.RED)).append(Text.literal(" погиб, оставив Золотое Яйцо!").formatted(Formatting.GRAY)), false);
     }
 
-        private static void giveUsefulGift(ChickenEntity chicken, ServerPlayerEntity owner, String ownerName) {
-        Random rand = new Random();
+    public static void giveUsefulGift(ChickenEntity chicken, ServerPlayerEntity owner, String ownerName) {
+        java.util.Random rand = new java.util.Random();
         ItemStack gift;
         String giftName;
-        int roll = rand.nextInt(100); // Число от 0 до 99
+        int roll = rand.nextInt(100);
         
-        // ЭПИЧЕСКИЙ ДРОП (шансы настроены для баланса)
         if (roll < 1) { 
-            // УЛЬТРА РЕДКОСТЬ: Элитры + Фейерверки (сразу комплект!)
             gift = new ItemStack(Items.ELYTRA, 1);
             giftName = "ЭЛИТРЫ + ФЕЙЕРВЕРКИ (УЛЬТРА РЕДКОСТЬ!)";
-            
-            // Дополнительно даем фейерверки
             ItemStack fireworks = new ItemStack(Items.FIREWORK_ROCKET, 32);
             ItemEntity fireworkEntity = new ItemEntity(chicken.getWorld(), chicken.getX() + 0.5, chicken.getY() + 1, chicken.getZ(), fireworks);
             chicken.getWorld().spawnEntity(fireworkEntity);
-            
         } else if (roll < 3) { 
-            // Тотем бессмертия (спасает от смерти)
             gift = new ItemStack(Items.TOTEM_OF_UNDYING, 1);
             giftName = "ТОТЕМ БЕССМЕРТИЯ!";
-            
         } else if (roll < 6) { 
-            // Зачарованное золотое яблоко (мощный бафф)
             gift = new ItemStack(Items.ENCHANTED_GOLDEN_APPLE, 1);
             giftName = "Зачарованное золотое яблоко";
-            
         } else if (roll < 11) { 
-            // Жемчуг Эндера (для телепортации)
             gift = new ItemStack(Items.ENDER_PEARL, 4);
             giftName = "Жемчуг Эндера (x4)";
-            
         } else if (roll < 16) { 
-            // Око Эндера (для поиска крепости)
             gift = new ItemStack(Items.ENDER_EYE, 2);
             giftName = "Око Эндера (x2)";
-            
         } else if (roll < 22) { 
-            // Обсидиан (для портала в Энд)
             gift = new ItemStack(Items.OBSIDIAN, 8);
             giftName = "Обсидиан (x8)";
-            
         } else if (roll < 28) { 
-            // Алмазный блок
             gift = new ItemStack(Items.DIAMOND_BLOCK, 1);
             giftName = "Алмазный блок";
-            
         } else if (roll < 38) { 
-            // Алмаз
             gift = new ItemStack(Items.DIAMOND, 1);
             giftName = "Алмаз";
-            
         } else if (roll < 48) { 
-            // Алмазная кирка (для добычи обсидиана)
             gift = new ItemStack(Items.DIAMOND_PICKAXE, 1);
             giftName = "Алмазная кирка";
-            
         } else if (roll < 58) { 
-            // Алмазный меч
             gift = new ItemStack(Items.DIAMOND_SWORD, 1);
             giftName = "Алмазный меч";
-            
         } else if (roll < 68) { 
-            // TNT (для веселья и добычи)
             gift = new ItemStack(Items.TNT, 5);
             giftName = "TNT (x5)";
-            
         } else if (roll < 78) { 
-            // Изумруды
             gift = new ItemStack(Items.EMERALD, 3);
             giftName = "Изумруды (x3)";
-            
         } else if (roll < 88) { 
-            // Золото
             gift = new ItemStack(Items.GOLD_INGOT, 5);
             giftName = "Золото (x5)";
-            
         } else if (roll < 95) {
-            // Железо
             gift = new ItemStack(Items.IRON_INGOT, 8);
             giftName = "Железо (x8)";
-            
         } else {
-            // Еда (всегда полезно)
             gift = new ItemStack(Items.COOKED_BEEF, 16);
             giftName = "Жареная говядина (x16)";
         }
@@ -467,6 +452,8 @@ public class PetManager {
         SPAWN_TIMES.remove(uuid);
         LAST_CLUCK_TIMES.remove(uuid);
         LAST_GIFT_TIMES.remove(uuid);
+        PLAYER_LEVELS.remove(playerName);
+        ACHIEVEMENTS.remove(playerName);
     }
 
     public static String getVoiceForUser(String username) {
@@ -502,4 +489,54 @@ public class PetManager {
             player.sendMessage(Text.literal("  • ").append(Text.literal(entry.getKey()).formatted(Formatting.GREEN)).append(Text.literal(" - Уровень " + level).formatted(Formatting.YELLOW)), false);
         }
     }
-}
+        // Гарантированный дроп прямо в ноги игроку (для команды !drop из чата)
+        // GOD-TIER ДРОП: Помогает пройти игру быстрее
+    public static void giveUsefulGiftAtLocation(net.minecraft.world.World world, double x, double y, double z, net.minecraft.server.network.ServerPlayerEntity owner, String ownerName) {
+        java.util.Random rand = new java.util.Random();
+        ItemStack gift;
+        String giftName;
+        int roll = rand.nextInt(100); // 0 to 99
+        
+        // ШАНСЫ НАСТРОЕНЫ ДЛЯ МАКСИМАЛЬНОГО ВАУ-ЭФФЕКТА
+        if (roll == 0) { // 1%
+            gift = new ItemStack(Items.NETHERITE_INGOT, 1);
+            giftName = "НЕЗЕРИТОВЫЙ СЛИТОК! (УЛЬТРА РЕДКОСТЬ)";
+        } else if (roll < 3) { // 2%
+            gift = new ItemStack(Items.ELYTRA, 1);
+            giftName = "ЭЛИТРЫ!";
+        } else if (roll < 6) { // 3%
+            gift = new ItemStack(Items.TOTEM_OF_UNDYING, 1);
+            giftName = "ТОТЕМ БЕССМЕРТИЯ!";
+        } else if (roll < 10) { // 4%
+            gift = new ItemStack(Items.ENCHANTED_GOLDEN_APPLE, 1);
+            giftName = "ЗАЧАРОВАННОЕ ЗОЛОТОЕ ЯБЛОКО!";
+        } else if (roll < 20) { // 10%
+            gift = new ItemStack(Items.ENDER_PEARL, 16);
+            giftName = "ЖЕМЧУГ ЭНДЕРА (x16)";
+        } else if (roll < 30) { // 10%
+            gift = new ItemStack(Items.DIAMOND_BLOCK, 1);
+            giftName = "АЛМАЗНЫЙ БЛОК";
+        } else if (roll < 45) { // 15%
+            gift = new ItemStack(Items.OBSIDIAN, 8);
+            giftName = "ОБСИДИАН (x8) - на портал";
+        } else if (roll < 65) { // 20%
+            gift = new ItemStack(Items.GOLDEN_CARROT, 32);
+            giftName = "Золотая морковь (x32) - лучшая еда";
+        } else { // 35%
+            gift = new ItemStack(Items.IRON_INGOT, 16);
+            giftName = "Железные слитки (x16)";
+        }
+        
+        ItemEntity giftEntity = new ItemEntity(world, x, y, z, gift);
+        giftEntity.setPickupDelay(0); // Можно подобрать мгновенно
+        world.spawnEntity(giftEntity);
+        
+        owner.sendMessage(Text.literal("🎁 ").append(Text.literal(ownerName).formatted(Formatting.GREEN))
+            .append(Text.literal(" выбил для тебя: ").formatted(Formatting.GRAY))
+            .append(Text.literal(giftName).formatted(Formatting.GOLD, Formatting.BOLD)), false);
+            
+        // Эпичные частицы при дропе
+        ((net.minecraft.server.world.ServerWorld) world).spawnParticles(ParticleTypes.TOTEM_OF_UNDYING, x, y + 1.5, z, 20, 0.5, 0.5, 0.5, 0.1);
+        ((net.minecraft.server.world.ServerWorld) world).spawnParticles(ParticleTypes.GLOW, x, y + 1.5, z, 15, 0.5, 0.5, 0.5, 0.1);
+    }
+} // <--- ЭТА СКОБКА ЗАКРЫВАЕТ ВЕСЬ КЛАСС PetManager
