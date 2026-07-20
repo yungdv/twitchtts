@@ -15,7 +15,9 @@ public class ModConfig {
     public int maxPets = 5;
     public long petLifespanMs = 600000; // 10 минут по умолчанию
     public int messageIntervalMs = 1000;
-    public List<String> voiceRotation = Arrays.asList("aidar", "baya", "kseniya", "xenia", "eugene");
+    
+    // СПИСОК ГОЛОСОВ
+    public List<String> voiceRotation = Arrays.asList("baya", "aidan", "kseniya", "xenia", "eugene");
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("twitchtts.json");
@@ -36,7 +38,6 @@ public class ModConfig {
 
     public void save() {
         try {
-            // Создаем папку config, если её вдруг нет
             Files.createDirectories(CONFIG_PATH.getParent());
             try (FileWriter writer = new FileWriter(CONFIG_PATH.toFile())) {
                 GSON.toJson(this, writer);
@@ -46,4 +47,4 @@ public class ModConfig {
             e.printStackTrace();
         }
     }
-} // <-- Вот эта самая важная закрывающая скобка всего класса!
+}
