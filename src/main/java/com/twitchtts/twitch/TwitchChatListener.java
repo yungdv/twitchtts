@@ -160,15 +160,7 @@ public class TwitchChatListener {
         }
 
                 try {
-            // Выводим сообщение в чат Minecraft с красивым оформлением
-            if (TwitchTts.SERVER != null) {
-                Text chatMsg = Text.literal("📺 ").formatted(Formatting.DARK_PURPLE)
-                    .append(Text.literal(username).formatted(Formatting.AQUA, Formatting.BOLD))
-                    .append(Text.literal(": ").formatted(Formatting.WHITE))
-                    .append(Text.literal(rawMessage).formatted(Formatting.GRAY));
-                TwitchTts.SERVER.getPlayerManager().broadcast(chatMsg, false);
-            }
-            
+            // Просто добавляем в очередь TTS (она сама выведет в чат)
             MessageQueue.QueueMessage qMessage = new MessageQueue.QueueMessage(username, rawMessage);
             TwitchTts.MESSAGE_QUEUE.addMessage(qMessage);
         } catch (Exception e) {
